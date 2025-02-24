@@ -1,8 +1,11 @@
 package handler
 
 import (
-    "fmt"
-    "net/http"
+	"encoding/json"
+	"fmt"
+	"net/http"
+	"strconv"
+	"strings"
 )
 
 func PopulationHandler(w http.ResponseWriter, r *http.Request) {
@@ -16,11 +19,181 @@ func PopulationHandler(w http.ResponseWriter, r *http.Request) {
 
 func getRequestPopulation(w http.ResponseWriter, r *http.Request) {
     w.Header().Set("Content-Type", "application/json")
-    output := "Welcome to population page"
+    
+    
+    // ----------------- READING URL ------------------
+    cc := r.PathValue("val")
+    if cc == "" {
+        http.Error(w, "Error reading the country code",http.StatusBadRequest) // not a server error
+        return                                                                // therefore reuturn 400
+    }
+    limit := r.URL.Query().Get("limit")
+    years := strings.Split(limit,"-")
+    var startYear, endYear int
+    if len(years) == 2 && len(years[0]) == 4 && len(years[1]) == 4 {
+        var err error
 
-    _, err := fmt.Fprintf(w,"%v",output)
+        startYear, err = strconv.Atoi(years[0])
+        if err != nil {
+            startYear = 0
+        }
+        endYear, err = strconv.Atoi(years[1])
+        if err != nil {
+            endYear = 0
+        }
+    } else {
+        startYear = 0
+        endYear = 0
+    }
+     
+   
+    
+    println("\nStart Year:",startYear)
+    println("End Year:",endYear)
+
+    // ----------------- FETCHING API -----------------
+    apiURL := POPULATION_API
+    apiNAME := RESTCOUNTRY_API + cc
+
+    client := &http.Client{}
+    defer client.CloseIdleConnections()
+
+    // ------------------ handle the NAME api (country api) ------------------------
+    reqName, err := http.NewRequest(http.MethodGet, apiNAME, nil)
     if err != nil {
-        http.Error(w, "Error when output", http.StatusInternalServerError)
+        http.Error(w,"Error making request for name api:"+err.Error(), http.StatusInternalServerError)
+        return
     }
 
+    resName, err := client.Do(reqName)
+    if err != nil {
+        http.Error(w, "Error fetching request for name api:"+err.Error(), http.StatusInternalServerError)
+        return
+    }
+    defer resName.Body.Close()
+
+    dataName, err := decodeAPIName(resName)
+    if err != nil {
+        http.Error(w, "Error decoding json:"+err.Error(), http.StatusInternalServerError)
+        return
+    }
+    // ------------------------ OUTPUT IN CONSOLE ------------------------------
+    fmt.Printf("\nFETCHING DATA COUNTRIES USED FOR NAME\n")
+	fmt.Printf("Status: %s\n", resName.Status)
+	fmt.Printf("Status Code: %d\n", resName.StatusCode)
+	fmt.Printf("Content Type: %s\n", resName.Header.Get("content-type"))
+	fmt.Printf("Protocol: %s\n", resName.Proto)
+	fmt.Printf("-----------\n")
+
+    fmt.Println(dataName)
+    
+    // ----------------------- HANDLE THE POPULATION API ---------------------
+    // request population api
+    reqPopulation,err := http.NewRequest(http.MethodGet,apiURL,nil)
+    if err != nil {
+        http.Error(w,"Error making request for countries: "+err.Error(),http.StatusInternalServerError)
+        return
+    }
+
+    resPopulation,err := client.Do(reqPopulation)
+    if err != nil {
+        http.Error(w, "Error fetching request for countries"+err.Error(),http.StatusInternalServerError)
+        return
+    }
+    defer resPopulation.Body.Close()
+
+    dataPopulation,err := decodeAPIPopulation(resPopulation, dataName)
+    if err != nil {
+        http.Error(w, "Error decoding json: "+err.Error(),http.StatusInternalServerError)
+        return
+    }
+
+    // ------------------------ OUTPUT IN CONSOLE ------------------------------
+    fmt.Printf("\n-----------")
+    fmt.Printf("\nFETCHING DATA COUNTRIES\n")
+	fmt.Printf("Status: %s\n", resPopulation.Status)
+	fmt.Printf("Status Code: %d\n", resPopulation.StatusCode)
+	fmt.Printf("Content Type: %s\n", resPopulation.Header.Get("content-type"))
+	fmt.Printf("Protocol: %s\n", resPopulation.Proto)
+	fmt.Printf("-----------")
+    
+    
+    
+    // --------------------------- FORMATING THE JSON --------------------------
+    
+    data, err := correctFormat(dataPopulation, startYear, endYear)
+    if err !=  nil {
+        http.Error(w, "Error formating the json"+err.Error(),http.StatusInternalServerError)
+    }
+
+    // Marrshall 
+    resJson, err := json.MarshalIndent(data, "", " ")
+    if err != nil {
+        http.Error(w, "Error encoding JSON: "+err.Error(),http.StatusInternalServerError)
+        return	
+    }
+    w.Write(resJson)
+
 }
+
+func decodeAPIName(r *http.Response) (string, error) {
+    var country []CountryRequest      // api format
+    err := json.NewDecoder(r.Body).Decode(&country)
+    if err != nil {
+        return "", err
+    }
+    
+    name := country[0].Name.Common 
+
+    return name, nil
+}
+
+func decodeAPIPopulation(r *http.Response, name string) (populationAPIResponse,error) {
+    var requestJSON  populationAPIRequest
+    var responseJSON populationAPIResponse
+    err := json.NewDecoder(r.Body).Decode(&requestJSON)  
+    if err != nil {
+        return responseJSON, err
+    }
+
+    responseJSON.Country = name
+    
+    for _, val := range requestJSON.Data {
+        if val.Country == name {
+            responseJSON.PopulationCounts = val.PopulationCounts 
+        }
+    }
+
+    return responseJSON, nil
+}
+
+
+
+func correctFormat(populationData populationAPIResponse, start int, end int) (populationResponse, error) {
+    var data populationResponse
+    
+    // for the population data
+    if start == 0 && end == 0 {
+        data.Values = populationData.PopulationCounts 
+    } else {
+        for _, val := range populationData.PopulationCounts {
+            if val.Year >= start && val.Year <= end {
+                data.Values = append(data.Values, val)
+            }
+        }
+    }
+
+    // calculating mean
+    total := 0
+    for _, val := range data.Values {
+        total += val.Value
+    }
+
+    if total != 0 {
+        data.Mean = total / len(data.Values)
+    }
+     
+    
+    return data, nil
+}
+

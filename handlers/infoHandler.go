@@ -23,15 +23,21 @@ func handleGetRequest(w http.ResponseWriter, r *http.Request) {
     
     cc := r.PathValue("val")
     if cc == "" {
-        http.Error(w, "Missing country code in URL", http.StatusBadRequest)
+        http.Error(w, "Error reading the country code", http.StatusBadRequest)
         return
     }
-    apiUrl := COUNTRY_API + cc
+    apiUrl := RESTCOUNTRY_API + cc
+
+    limit := r.URL.Query().Get("limit")
+    if limit == "" {
+        limit = "10"
+    }
+    fmt.Println("Limit:",limit)
 
     client := &http.Client{}
     defer client.CloseIdleConnections()
 
-    // HANDLE THE COUNTRY
+    // ----------------------- HANDLE THE COUNTRY ---------------------
     // request country
     reqCountry, err := http.NewRequest(http.MethodGet,apiUrl,nil) 
     if err != nil {
@@ -47,13 +53,13 @@ func handleGetRequest(w http.ResponseWriter, r *http.Request) {
     defer resCountry.Body.Close()
     
     // fetch the country and return a json in struct
-    dataCountry, err := fetchApiCountriesBody(resCountry)
+    dataCountry, err := decodeApiCountriesBody(resCountry)
     if err != nil {
         http.Error(w, "Error decoding json: "+err.Error(),http.StatusInternalServerError)
     }
     
-    // HANDLE THE CITIES
-    reqCities, err := http.NewRequest(http.MethodGet,CITIES_API,nil)
+    // ----------------  HANDLE THE CITIES --------------------------
+    reqCities, err := http.NewRequest(http.MethodGet,COUNTRIESNOW_API,nil)
     if err != nil {
         http.Error(w,"Error creating request for cities: "+err.Error(),http.StatusInternalServerError)
     }
@@ -64,7 +70,7 @@ func handleGetRequest(w http.ResponseWriter, r *http.Request) {
     }
     defer resCities.Body.Close()
 
-    dataCities, err := fetchApiCitiesBody(resCities,dataCountry.Name)
+    dataCities, err := decodeApiCitiesBody(resCities,dataCountry.Name)
     if err != nil {
         http.Error(w,"Error decoding json: "+err.Error(),http.StatusInternalServerError)
     }
@@ -102,9 +108,9 @@ func handleGetRequest(w http.ResponseWriter, r *http.Request) {
     w.Write(resJson)    
 }
 
-func fetchApiCountriesBody(r *http.Response) (Country, error) {
-    var data Country 
-    var apiData []CountryResponse
+func decodeApiCountriesBody(r *http.Response) (CountryResponse, error) {
+    var data CountryResponse 
+    var apiData []CountryRequest
     err := json.NewDecoder(r.Body).Decode(&apiData)
     if err != nil {
         return data, err
@@ -115,21 +121,21 @@ func fetchApiCountriesBody(r *http.Response) (Country, error) {
         return data, fmt.Errorf("no data found in api")
     }
 
-    data = Country {
+    data = CountryResponse {
         Name:        apiData[0].Name.Common,
         Continents:  apiData[0].Continents,
         Population:  apiData[0].Population,
         Languages:   apiData[0].Languages,
         Borders:     apiData[0].Borders,
         Capital:     apiData[0].Capital[0],
-        Cities:      []string{},
+        Cities:      []string{},           // read this later in the other api
     }
     
     return data, nil
 }
 
-func fetchApiCitiesBody(r *http.Response,countryName string) ([]string, error) {
-    var data cityResponse
+func decodeApiCitiesBody(r *http.Response,countryName string) ([]string, error) {
+    var data cityRequest
     err := json.NewDecoder(r.Body).Decode(&data)
     if err != nil {
         return nil, err
