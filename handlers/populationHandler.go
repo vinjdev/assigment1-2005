@@ -8,6 +8,9 @@ import (
 	"strings"
 )
 
+/*
+    Ensure the the REST method is get
+*/
 func PopulationHandler(w http.ResponseWriter, r *http.Request) {
     switch r.Method {
     case http.MethodGet: getRequestPopulation(w,r)
@@ -16,7 +19,10 @@ func PopulationHandler(w http.ResponseWriter, r *http.Request) {
         return
     }
 }
-
+/*
+    POPULATION Get function
+    request the api and returns the data in JSON fromat
+*/
 func getRequestPopulation(w http.ResponseWriter, r *http.Request) {
     w.Header().Set("Content-Type", "application/json")
     
@@ -85,7 +91,7 @@ func getRequestPopulation(w http.ResponseWriter, r *http.Request) {
 	fmt.Printf("Protocol: %s\n", resName.Proto)
 	fmt.Printf("-----------\n")
 
-    fmt.Println(dataName)
+    fmt.Println("\nName for Country:",dataName)
     
     // ----------------------- HANDLE THE POPULATION API ---------------------
     // request population api
@@ -115,7 +121,7 @@ func getRequestPopulation(w http.ResponseWriter, r *http.Request) {
 	fmt.Printf("Status Code: %d\n", resPopulation.StatusCode)
 	fmt.Printf("Content Type: %s\n", resPopulation.Header.Get("content-type"))
 	fmt.Printf("Protocol: %s\n", resPopulation.Proto)
-	fmt.Printf("-----------")
+	fmt.Printf("-----------\n")
     
     
     
@@ -136,6 +142,9 @@ func getRequestPopulation(w http.ResponseWriter, r *http.Request) {
 
 }
 
+/*
+    Decodes the RESTCOUNTRY API, to extract the name in strnig format
+*/
 func decodeAPIName(r *http.Response) (string, error) {
     var country []CountryRequest      // api format
     err := json.NewDecoder(r.Body).Decode(&country)
@@ -148,6 +157,9 @@ func decodeAPIName(r *http.Response) (string, error) {
     return name, nil
 }
 
+/*
+    decodes the Countrynow api in population to extract the population data, with the correct name
+*/
 func decodeAPIPopulation(r *http.Response, name string) (populationAPIResponse,error) {
     var requestJSON  populationAPIRequest
     var responseJSON populationAPIResponse
@@ -168,7 +180,9 @@ func decodeAPIPopulation(r *http.Response, name string) (populationAPIResponse,e
 }
 
 
-
+/*
+    Returns the correct format needed for populatin json. takes in start and end year, so it can extract the years if requested
+*/
 func correctFormat(populationData populationAPIResponse, start int, end int) (populationResponse, error) {
     var data populationResponse
     

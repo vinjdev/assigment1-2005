@@ -6,11 +6,11 @@ import (
 )
 
 
-func EmptyHandler(w http.ResponseWriter, r *http.Request) {
+func DefaultHandler(w http.ResponseWriter, r *http.Request) {
     w.Header().Set("Content-type","text/html")
 
-    output := "Root level. See <a href=\"" + INFO_PATH + "\">Info</a>"
-    output += " or <a href=\"" + POPULATION_PATH + "\">Population</a>"
+    output := "U seem lost try:<br> See <a href=\"" + INFO_PATH + "\">Info/{val}</a>"
+    output += " or <a href=\"" + POPULATION_PATH + "\">Population/{val}</a>"
     output += " or <a href=\"" + STATUS_PATH + "\">Status</a>"
     
     _,err := fmt.Fprintf(w,"%v",output)

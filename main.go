@@ -27,13 +27,13 @@ func main()  {
     }
 
     // Init the handler for endpoints
-    http.HandleFunc(handler.DEFAULT_PATH,handler.EmptyHandler)
+    http.HandleFunc(handler.DEFAULT_PATH,handler.DefaultHandler)
     http.HandleFunc(handler.INFO_PATH, handler.InfoHandler)
     http.HandleFunc(handler.POPULATION_PATH, handler.PopulationHandler)
-    http.HandleFunc(handler.STATUS_PATH, func(w http.ResponseWriter, r *http.Request) {
+    http.HandleFunc(handler.STATUS_PATH, func(w http.ResponseWriter, r *http.Request) { // pass in the time variable
         handler.StatusHandler(w,r,startTime)
     })
- 
+
     // Start server
     fmt.Println("Starting server on " + port)
     fmt.Println("http://localhost:8080/countryinfo/v1")

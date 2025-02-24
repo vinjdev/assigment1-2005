@@ -8,7 +8,9 @@ import (
 )
 
 
-
+/*
+    Ensure the the REST method is get
+*/
 func StatusHandler(w http.ResponseWriter, r *http.Request, sTime time.Time) {
     switch r.Method {
     case http.MethodGet: getRequestStatus(w,r,sTime)
@@ -18,7 +20,10 @@ func StatusHandler(w http.ResponseWriter, r *http.Request, sTime time.Time) {
     }
 
 }
-
+/*
+    STATUS Get function
+    request the api and returns the data in JSON fromat
+*/
 func getRequestStatus(w http.ResponseWriter, r *http.Request, sTime time.Time) {
     w.Header().Set("Content-Type", "application/json")
 
@@ -87,6 +92,9 @@ func getRequestStatus(w http.ResponseWriter, r *http.Request, sTime time.Time) {
 
 }
 
+/*
+    Returns the correct format used for status. caclualte the uptime for the service
+*/
 func formatJSON(resCountry *http.Response, resREST *http.Response,sTime time.Time) (statusResponse, error) {
     var data statusResponse
     

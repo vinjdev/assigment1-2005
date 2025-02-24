@@ -8,6 +8,9 @@ import (
 )
 
 
+/*
+    Ensure the the REST method is get
+*/
 func InfoHandler(w http.ResponseWriter, r *http.Request) {
     switch r.Method {
     case http.MethodGet: handleGetRequest(w,r)
@@ -17,10 +20,14 @@ func InfoHandler(w http.ResponseWriter, r *http.Request) {
     } 
 }
 
-// bruker api_url appender country_code, og printer ut json format
+/*
+    INFO Get function
+    request the api and returns the data in JSON fromat
+*/
 func handleGetRequest(w http.ResponseWriter, r *http.Request) {
     w.Header().Set("Content-Type", "application/json")
-    // ----------------- FETCHING API -----------------
+
+    // --------------------- READING URL -------------------
     
     cc := r.PathValue("val")
     if cc == "" {
@@ -45,6 +52,8 @@ func handleGetRequest(w http.ResponseWriter, r *http.Request) {
     
     fmt.Println("Limit:",limitInt)
 
+    // ----------------- FETCHING API -----------------
+
     client := &http.Client{}
     defer client.CloseIdleConnections()
 
@@ -68,6 +77,15 @@ func handleGetRequest(w http.ResponseWriter, r *http.Request) {
     if err != nil {
         http.Error(w, "Error decoding json: "+err.Error(),http.StatusInternalServerError)
     }
+    // ----------------- INFO LOG -----------------
+
+    fmt.Printf("\n-----------\n")
+    fmt.Printf("\nFETCHING DATA COUNTRIES\n")
+	fmt.Printf("Status: %s\n", resCountry.Status)
+	fmt.Printf("Status Code: %d\n", resCountry.StatusCode)
+	fmt.Printf("Content Type: %s\n", resCountry.Header.Get("content-type"))
+	fmt.Printf("Protocol: %s\n", resCountry.Proto)
+	fmt.Printf("-----------\n")
     
     // ----------------  HANDLE THE CITIES --------------------------
     reqCities, err := http.NewRequest(http.MethodGet,COUNTRIESNOW_API,nil)
@@ -86,17 +104,6 @@ func handleGetRequest(w http.ResponseWriter, r *http.Request) {
         http.Error(w,"Error decoding json: "+err.Error(),http.StatusInternalServerError)
     }
 
-
-    // ----------------- INFO LOG -----------------
-
-    // COUNTRY API
-    fmt.Printf("\n-----------\n")
-    fmt.Printf("\nFETCHING DATA COUNTRIES\n")
-	fmt.Printf("Status: %s\n", resCountry.Status)
-	fmt.Printf("Status Code: %d\n", resCountry.StatusCode)
-	fmt.Printf("Content Type: %s\n", resCountry.Header.Get("content-type"))
-	fmt.Printf("Protocol: %s\n", resCountry.Proto)
-	fmt.Printf("-----------\n")
 
     // CITIES API
     fmt.Printf("\n-----------\n")
@@ -119,6 +126,9 @@ func handleGetRequest(w http.ResponseWriter, r *http.Request) {
     w.Write(resJson)    
 }
 
+/*
+    Decodes the api from RESTCOUNTRIES api and returns the correct format
+*/
 func decodeApiCountriesBody(r *http.Response) (CountryResponse, error) {
     var data CountryResponse 
     var apiData []CountryRequest
@@ -144,7 +154,9 @@ func decodeApiCountriesBody(r *http.Response) (CountryResponse, error) {
     
     return data, nil
 }
-
+/*
+    Decodes the cities from countriesnow api and returns the cities in a list of strings
+*/
 func decodeApiCitiesBody(r *http.Response,countryName string,limit int) ([]string, error) {
     var data cityRequest
     err := json.NewDecoder(r.Body).Decode(&data)
