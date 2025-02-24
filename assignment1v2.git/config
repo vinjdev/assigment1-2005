@@ -1,0 +1,8 @@
+[core]
+	repositoryformatversion = 0
+	filemode = true
+	bare = true
+[remote "origin"]
+	url = git@git.gvk.idi.ntnu.no:course/prog2005/prog2005-2025-workspace/vinjarab/assignment1v2.git
+	fetch = +refs/*:refs/*
+	mirror = true

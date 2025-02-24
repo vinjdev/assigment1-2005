@@ -31,3 +31,13 @@ request the two apis used, and checks if the apis are up and runninng
 shows the version for the application
 shows the uptime for when the service was deployed
 
+## RENDER
+main page:       https://assigment1-2005.onrender.com/countryinfo/v1/
+info page:       https://assigment1-2005.onrender.com/countryinfo/v1/info/{val}
+population page: https://assigment1-2005.onrender.com/countryinfo/v1/population/{val}
+status page:     https://assigment1-2005.onrender.com/countryinfo/v1/
+
+
+
+
+
