@@ -16,9 +16,7 @@ func main()  {
 
     fmt.Println("Starting server...") 
 
-    var startTime time.Time
-
-    startTime = time.Now()
+    startTime := time.Now()
 
     // Setting a port
     port := os.Getenv("Port")
@@ -28,7 +26,7 @@ func main()  {
         port = "8080"
     }
 
-    // init the handler for endpoints
+    // Init the handler for endpoints
     http.HandleFunc(handler.DEFAULT_PATH,handler.EmptyHandler)
     http.HandleFunc(handler.INFO_PATH, handler.InfoHandler)
     http.HandleFunc(handler.POPULATION_PATH, handler.PopulationHandler)
@@ -36,7 +34,7 @@ func main()  {
         handler.StatusHandler(w,r,startTime)
     })
  
-    // start server
+    // Start server
     fmt.Println("Starting server on " + port)
     fmt.Println("http://localhost:8080/countryinfo/v1")
     log.Fatal(http.ListenAndServe(":"+port,nil))

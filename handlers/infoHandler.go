@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+    "strconv"
 )
 
 
@@ -29,10 +30,20 @@ func handleGetRequest(w http.ResponseWriter, r *http.Request) {
     apiUrl := RESTCOUNTRY_API + cc
 
     limit := r.URL.Query().Get("limit")
+    limitInt := 0
+    
     if limit == "" {
-        limit = "10"
+        limitInt = 0
+    } else {
+        var err error
+        limitInt,err = strconv.Atoi(limit)
+        if err != nil {
+            http.Error(w,"Error converting string to int:"+err.Error(), http.StatusInternalServerError)
+            return
+        }
     }
-    fmt.Println("Limit:",limit)
+    
+    fmt.Println("Limit:",limitInt)
 
     client := &http.Client{}
     defer client.CloseIdleConnections()
@@ -70,7 +81,7 @@ func handleGetRequest(w http.ResponseWriter, r *http.Request) {
     }
     defer resCities.Body.Close()
 
-    dataCities, err := decodeApiCitiesBody(resCities,dataCountry.Name)
+    dataCities, err := decodeApiCitiesBody(resCities,dataCountry.Name,limitInt)
     if err != nil {
         http.Error(w,"Error decoding json: "+err.Error(),http.StatusInternalServerError)
     }
@@ -134,18 +145,22 @@ func decodeApiCountriesBody(r *http.Response) (CountryResponse, error) {
     return data, nil
 }
 
-func decodeApiCitiesBody(r *http.Response,countryName string) ([]string, error) {
+func decodeApiCitiesBody(r *http.Response,countryName string,limit int) ([]string, error) {
     var data cityRequest
     err := json.NewDecoder(r.Body).Decode(&data)
     if err != nil {
         return nil, err
     }
-
     for _, val := range data.Data {
         if val.Country == countryName {
-            return val.Cities, nil 
+            if limit == 0 {
+                return val.Cities, nil
+            }
+            return val.Cities[:limit],nil
+
         }
     } 
+    
     return nil, fmt.Errorf("no cities found for country: %s", countryName)
 }
 
