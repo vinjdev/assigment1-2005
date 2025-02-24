@@ -6,12 +6,19 @@ import (
 	"log"
 	"net/http"
 	"os"
+    "time"
     
 )
+
+
 
 func main()  {
 
     fmt.Println("Starting server...") 
+
+    var startTime time.Time
+
+    startTime = time.Now()
 
     // Setting a port
     port := os.Getenv("Port")
@@ -25,7 +32,9 @@ func main()  {
     http.HandleFunc(handler.DEFAULT_PATH,handler.EmptyHandler)
     http.HandleFunc(handler.INFO_PATH, handler.InfoHandler)
     http.HandleFunc(handler.POPULATION_PATH, handler.PopulationHandler)
-    http.HandleFunc(handler.STATUS_PATH, handler.StatusHandler)
+    http.HandleFunc(handler.STATUS_PATH, func(w http.ResponseWriter, r *http.Request) {
+        handler.StatusHandler(w,r,startTime)
+    })
  
     // start server
     fmt.Println("Starting server on " + port)

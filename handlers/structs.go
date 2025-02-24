@@ -85,7 +85,7 @@ type statusResponse struct {
     Countriesnowapi  string   `json:"countriesnowapi"`
     Restcountriesapi string   `json:"restcountriesapi"`
     Version          string   `json:"version"`
-    Uptime           string   `json:"uptime"`
+    Uptime           float64  `json:"uptime"`
 }
 
 
