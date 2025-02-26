@@ -40,6 +40,8 @@ info page:       https://assigment1-2005.onrender.com/countryinfo/v1/info/{val}
 population page: https://assigment1-2005.onrender.com/countryinfo/v1/population/{val}
 status page:     https://assigment1-2005.onrender.com/countryinfo/v1/status
 
+The render website can be slow to start, as it turns off when its not been activly used. Wait for 1 min for it to run correctly
+
 
 
 
