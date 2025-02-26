@@ -7,7 +7,7 @@ const (
     POPULATION_PATH = DEFAULT_PATH +  "population/{val}"   // {?limit=10}
     STATUS_PATH = DEFAULT_PATH +      "status/"
 
-    RESTCOUNTRY_API =                     "http://129.241.150.113:8080/v3.1/alpha/"
-    COUNTRIESNOW_API  =                     "https://countriesnow.space/api/v0.1/countries"
+    RESTCOUNTRY_API =                 "http://129.241.150.113:8080/v3.1/alpha/"
+    COUNTRIESNOW_API  =               "https://countriesnow.space/api/v0.1/countries"
     POPULATION_API =                  "https://countriesnow.space/api/v0.1/countries/population"
 )

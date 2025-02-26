@@ -29,33 +29,39 @@ func getRequestPopulation(w http.ResponseWriter, r *http.Request) {
     
     // ----------------- READING URL ------------------
     cc := r.PathValue("val")
-    if cc == "" {
+    if len(cc) != 2 {
         http.Error(w, "Error reading the country code",http.StatusBadRequest) // not a server error
         return                                                                // therefore reuturn 400
     }
     limit := r.URL.Query().Get("limit")
-    years := strings.Split(limit,"-")
-    var startYear, endYear int
-    if len(years) == 2 && len(years[0]) == 4 && len(years[1]) == 4 {
-        var err error
+    startYear := 0
+    endYear   := 0
 
-        startYear, err = strconv.Atoi(years[0])
-        if err != nil {
-            startYear = 0
+    if limit != "" {
+        years := strings.Split(limit,"-")
+        if (len(years) == 2 && len(years[0]) == 4 && len(years[1]) == 4) {
+            var err error
+
+            startYear, err = strconv.Atoi(years[0])
+            if err != nil {
+                http.Error(w,"Error reading the limit, write a year between 1960 and 2018",http.StatusBadRequest)
+                return
+            }
+            endYear, err = strconv.Atoi(years[1])
+            if err != nil {
+                http.Error(w,"Error reading the limit, write a year between 1960 and 2018",http.StatusBadRequest)
+                return
+            }
+            if years[0] > years[1] {
+                http.Error(w,"First year provided needs to be lower than the second year",http.StatusBadRequest)
+                return
+            }
+            
+        } else {
+            http.Error(w,"Error reading the limit, write a year between 1960 and 2018",http.StatusBadRequest)
+            return
         }
-        endYear, err = strconv.Atoi(years[1])
-        if err != nil {
-            endYear = 0
-        }
-    } else {
-        startYear = 0
-        endYear = 0
     }
-     
-   
-    
-    println("\nStart Year:",startYear)
-    println("End Year:",endYear)
 
     // ----------------- FETCHING API -----------------
     apiURL := POPULATION_API
@@ -67,20 +73,20 @@ func getRequestPopulation(w http.ResponseWriter, r *http.Request) {
     // ------------------ handle the NAME api (country api) ------------------------
     reqName, err := http.NewRequest(http.MethodGet, apiNAME, nil)
     if err != nil {
-        http.Error(w,"Error making request for name api:"+err.Error(), http.StatusInternalServerError)
+        http.Error(w,"Error making request for the RESTCOUNTRY api", http.StatusInternalServerError)
         return
     }
 
     resName, err := client.Do(reqName)
     if err != nil {
-        http.Error(w, "Error fetching request for name api:"+err.Error(), http.StatusInternalServerError)
+        http.Error(w, "Error fetching request for the RESTCOUNTRY api", http.StatusInternalServerError)
         return
     }
     defer resName.Body.Close()
 
     dataName, err := decodeAPIName(resName)
     if err != nil {
-        http.Error(w, "Error decoding json:"+err.Error(), http.StatusInternalServerError)
+        http.Error(w, "Error decoding json", http.StatusInternalServerError)
         return
     }
     // ------------------------ OUTPUT IN CONSOLE ------------------------------
@@ -97,20 +103,20 @@ func getRequestPopulation(w http.ResponseWriter, r *http.Request) {
     // request population api
     reqPopulation,err := http.NewRequest(http.MethodGet,apiURL,nil)
     if err != nil {
-        http.Error(w,"Error making request for countries: "+err.Error(),http.StatusInternalServerError)
+        http.Error(w,"Error making request for the COUNTRYNOW POPULATION api",http.StatusInternalServerError)
         return
     }
 
     resPopulation,err := client.Do(reqPopulation)
     if err != nil {
-        http.Error(w, "Error fetching request for countries"+err.Error(),http.StatusInternalServerError)
+        http.Error(w, "Error fetching request for the COUNTRYNOW POPULATION api",http.StatusInternalServerError)
         return
     }
     defer resPopulation.Body.Close()
 
     dataPopulation,err := decodeAPIPopulation(resPopulation, dataName)
     if err != nil {
-        http.Error(w, "Error decoding json: "+err.Error(),http.StatusInternalServerError)
+        http.Error(w, "Error decoding json",http.StatusInternalServerError)
         return
     }
 
@@ -124,18 +130,17 @@ func getRequestPopulation(w http.ResponseWriter, r *http.Request) {
 	fmt.Printf("-----------\n")
     
     
-    
     // --------------------------- FORMATING THE JSON --------------------------
     
     data, err := correctFormat(dataPopulation, startYear, endYear)
     if err !=  nil {
-        http.Error(w, "Error formating the json"+err.Error(),http.StatusInternalServerError)
+        http.Error(w, "Error formating the json",http.StatusInternalServerError)
     }
 
     // Marrshall 
     resJson, err := json.MarshalIndent(data, "", " ")
     if err != nil {
-        http.Error(w, "Error encoding JSON: "+err.Error(),http.StatusInternalServerError)
+        http.Error(w, "Error encoding JSON",http.StatusInternalServerError)
         return	
     }
     w.Write(resJson)

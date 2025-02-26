@@ -33,19 +33,19 @@ func getRequestStatus(w http.ResponseWriter, r *http.Request, sTime time.Time) {
     // ---------------- HANDLE COUNTRIES NOW API ----------------------
     reqCountriesNowApi, err := http.NewRequest(http.MethodGet,COUNTRIESNOW_API, nil)
     if err != nil {
-        http.Error(w, "Error making request for countriesnowapi api:"+err.Error(),http.StatusInternalServerError)
+        http.Error(w, "Error making request for COUNTRIESNOW api",http.StatusInternalServerError)
         return
     }
     
     resCountriesNowApi, err := client.Do(reqCountriesNowApi) 
     if err != nil {
-        http.Error(w,"Error fetching request for countriesnowapi api"+err.Error(),http.StatusBadRequest)
+        http.Error(w,"Error fetching request for COUNTRIESNOW API",http.StatusBadRequest)
         return
     }
     defer resCountriesNowApi.Body.Close()
 
     // OUTPUT FOR CONSOLE
-    fmt.Printf("\nFETCHING DATA COUNTRIES USED FOR NAME\n")
+    fmt.Printf("\nFETCHING DATA FROM COUNTRIESNOW\n")
 	fmt.Printf("Status: %s\n", resCountriesNowApi.Status)
 	fmt.Printf("Status Code: %d\n", resCountriesNowApi.StatusCode)
 	fmt.Printf("Content Type: %s\n", resCountriesNowApi.Header.Get("content-type"))
@@ -53,22 +53,22 @@ func getRequestStatus(w http.ResponseWriter, r *http.Request, sTime time.Time) {
 	fmt.Printf("-----------\n")
 
     // -------------------- HANDLE RESTCOUNTRIES API ------------------
-    reqRESTCountriesApi, err:= http.NewRequest(http.MethodGet,RESTCOUNTRY_API+"no",nil)
+    reqRESTCountriesApi, err:= http.NewRequest(http.MethodGet,RESTCOUNTRY_API+"no",nil) // just add a working country code to check if it works
     if err != nil {
-        http.Error(w, "Error making request for restcountries api:"+err.Error(),http.StatusInternalServerError)
+        http.Error(w, "Error making request for restcountries api",http.StatusInternalServerError)
         return 
 
     }
     resRESTCountriesApi, err := client.Do(reqRESTCountriesApi)
     if err != nil {
-        http.Error(w, "Error making request for restcountries api:"+err.Error(),http.StatusInternalServerError)
+        http.Error(w, "Error making request for RESTCOUNTRY api",http.StatusInternalServerError)
         return
 
     }
     defer resRESTCountriesApi.Body.Close()
 
     // OUTPUT FOR CONSOLE
-    fmt.Printf("\nFETCHING DATA COUNTRIES USED FOR NAME\n")
+    fmt.Printf("\nFETCHING DATA FROM RESTCOUNTRY\n")
 	fmt.Printf("Status: %s\n", resRESTCountriesApi.Status)
 	fmt.Printf("Status Code: %d\n", resRESTCountriesApi.StatusCode)
 	fmt.Printf("Content Type: %s\n", resRESTCountriesApi.Header.Get("content-type"))
@@ -77,16 +77,15 @@ func getRequestStatus(w http.ResponseWriter, r *http.Request, sTime time.Time) {
 
     dataStatus, err := formatJSON(resCountriesNowApi, resRESTCountriesApi,sTime)
     if err != nil {
-        http.Error(w,"Error formating the json"+err.Error(),http.StatusInternalServerError)
+        http.Error(w,"Error formating the json",http.StatusInternalServerError)
         return
 
     }
     resJson, err := json.MarshalIndent(dataStatus, ""," ")
     if err != nil {
-        http.Error(w,"Error formating the json"+err.Error(),http.StatusInternalServerError)
+        http.Error(w,"Error formating the json",http.StatusInternalServerError)
         return
     }
-
 
     w.Write(resJson)
 

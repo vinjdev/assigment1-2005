@@ -30,7 +30,7 @@ func handleGetRequest(w http.ResponseWriter, r *http.Request) {
     // --------------------- READING URL -------------------
     
     cc := r.PathValue("val")
-    if cc == "" {
+    if len(cc) != 2 {
         http.Error(w, "Error reading the country code", http.StatusBadRequest)
         return
     }
@@ -45,7 +45,7 @@ func handleGetRequest(w http.ResponseWriter, r *http.Request) {
         var err error
         limitInt,err = strconv.Atoi(limit)
         if err != nil {
-            http.Error(w,"Error converting string to int:"+err.Error(), http.StatusInternalServerError)
+            http.Error(w,"Error could not read the limit, use a number", http.StatusBadRequest)
             return
         }
     }
@@ -61,13 +61,13 @@ func handleGetRequest(w http.ResponseWriter, r *http.Request) {
     // request country
     reqCountry, err := http.NewRequest(http.MethodGet,apiUrl,nil) 
     if err != nil {
-        http.Error(w, "Error creating request for countries: "+err.Error(),http.StatusInternalServerError)
+        http.Error(w, "Error creating request for countries",http.StatusInternalServerError)
         return
     }
     // response country 
     resCountry, err := client.Do(reqCountry)
     if err != nil {
-        http.Error(w, "Error fetching data for countries: "+err.Error(),http.StatusInternalServerError)
+        http.Error(w, "Error fetching data for countries",http.StatusInternalServerError)
         return
     }
     defer resCountry.Body.Close()
@@ -75,12 +75,12 @@ func handleGetRequest(w http.ResponseWriter, r *http.Request) {
     // fetch the country and return a json in struct
     dataCountry, err := decodeApiCountriesBody(resCountry)
     if err != nil {
-        http.Error(w, "Error decoding json: "+err.Error(),http.StatusInternalServerError)
+        http.Error(w, "Error decoding json",http.StatusInternalServerError)
     }
     // ----------------- INFO LOG -----------------
 
     fmt.Printf("\n-----------\n")
-    fmt.Printf("\nFETCHING DATA COUNTRIES\n")
+    fmt.Printf("\nFETCHING DATA FROM RESTCOUNTRY\n")
 	fmt.Printf("Status: %s\n", resCountry.Status)
 	fmt.Printf("Status Code: %d\n", resCountry.StatusCode)
 	fmt.Printf("Content Type: %s\n", resCountry.Header.Get("content-type"))
@@ -90,24 +90,24 @@ func handleGetRequest(w http.ResponseWriter, r *http.Request) {
     // ----------------  HANDLE THE CITIES --------------------------
     reqCities, err := http.NewRequest(http.MethodGet,COUNTRIESNOW_API,nil)
     if err != nil {
-        http.Error(w,"Error creating request for cities: "+err.Error(),http.StatusInternalServerError)
+        http.Error(w,"Error creating request for cities",http.StatusInternalServerError)
     }
 
     resCities, err := client.Do(reqCities)
     if err != nil {
-        http.Error(w,"Error fetcing data for cities: "+err.Error(),http.StatusInternalServerError)
+        http.Error(w,"Error fetcing data for cities",http.StatusInternalServerError)
     }
     defer resCities.Body.Close()
 
     dataCities, err := decodeApiCitiesBody(resCities,dataCountry.Name,limitInt)
     if err != nil {
-        http.Error(w,"Error decoding json: "+err.Error(),http.StatusInternalServerError)
+        http.Error(w,"Error decoding json",http.StatusInternalServerError)
     }
 
 
-    // CITIES API
+    // COUNTRYNOW API
     fmt.Printf("\n-----------\n")
-    fmt.Printf("\nFETCHING DATA CITIES\n")
+    fmt.Printf("\nFETCHING DATA FROM COUNTRIESNOW\n")
 	fmt.Printf("Status: %s\n", resCities.Status)
 	fmt.Printf("Status Code: %d\n", resCities.StatusCode)
 	fmt.Printf("Content Type: %s\n", resCities.Header.Get("content-type"))
@@ -120,7 +120,7 @@ func handleGetRequest(w http.ResponseWriter, r *http.Request) {
     dataCountry.Cities = dataCities
     resJson, err := json.MarshalIndent(dataCountry, "", " ")
     if err != nil {
-        http.Error(w, "Error encoding JSON: "+err.Error(),http.StatusInternalServerError)
+        http.Error(w, "Error encoding JSON",http.StatusInternalServerError)
         return
     }
     w.Write(resJson)    
@@ -168,7 +168,7 @@ func decodeApiCitiesBody(r *http.Response,countryName string,limit int) ([]strin
             if limit == 0 {
                 return val.Cities, nil
             }
-            return val.Cities[:limit],nil
+            return val.Cities[:limit],nil // slices all the cities from 0 to limit
 
         }
     } 
