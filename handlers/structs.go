@@ -36,10 +36,7 @@ type CountryRequest struct {
 type cityRequest struct {
     Error bool             `json:"error"`
     Msg   string           `json:"msg"`
-    Data  [] struct {
-        Country string     `json:"country"`
-        Cities []string    `json:"cities"`
-    }                      `json:"data"`
+    Data  []string         `json:"data"`
 }
 
 // -------------- population ------------------------
