@@ -1,15 +1,15 @@
 package handler
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"net/http"
-    "strconv"
+	"strconv"
 )
 
-
 /*
-    Ensure the the REST method is get
+   Ensure the the REST method is get
 */
 func InfoHandler(w http.ResponseWriter, r *http.Request) {
     switch r.Method {
@@ -76,6 +76,7 @@ func handleGetRequest(w http.ResponseWriter, r *http.Request) {
     dataCountry, err := decodeApiCountriesBody(resCountry)
     if err != nil {
         http.Error(w, "Error decoding json",http.StatusInternalServerError)
+        return
     }
     // ----------------- INFO LOG -----------------
 
@@ -88,20 +89,30 @@ func handleGetRequest(w http.ResponseWriter, r *http.Request) {
 	fmt.Printf("-----------\n")
     
     // ----------------  HANDLE THE CITIES --------------------------
-    reqCities, err := http.NewRequest(http.MethodGet,COUNTRIESNOW_API,nil)
+    requestBody, err := json.Marshal(map[string]string{"country": dataCountry.Name})
+    if err != nil {
+        http.Error(w, "Error encoding JSON payload", http.StatusInternalServerError)
+        return
+    }
+
+    reqCities, err := http.NewRequest(http.MethodPost,COUNTRIESNOW_API_CITIES,bytes.NewBuffer(requestBody))
     if err != nil {
         http.Error(w,"Error creating request for cities",http.StatusInternalServerError)
+        return
     }
+    reqCities.Header.Set("Content-Type","application/json")
 
     resCities, err := client.Do(reqCities)
     if err != nil {
         http.Error(w,"Error fetcing data for cities",http.StatusInternalServerError)
+        return
     }
     defer resCities.Body.Close()
 
-    dataCities, err := decodeApiCitiesBody(resCities,dataCountry.Name,limitInt)
+    dataCities, err := decodeApiCitiesBody(resCities,limitInt)
     if err != nil {
         http.Error(w,"Error decoding json",http.StatusInternalServerError)
+        return
     }
 
 
@@ -157,23 +168,23 @@ func decodeApiCountriesBody(r *http.Response) (CountryResponse, error) {
 /*
     Decodes the cities from countriesnow api and returns the cities in a list of strings
 */
-func decodeApiCitiesBody(r *http.Response,countryName string,limit int) ([]string, error) {
+func decodeApiCitiesBody(r *http.Response,limit int) ([]string, error) {
     var data cityRequest
     err := json.NewDecoder(r.Body).Decode(&data)
     if err != nil {
         return nil, err
     }
-    for _, val := range data.Data {
-        if val.Country == countryName {
-            if limit == 0 {
-                return val.Cities, nil
-            }
-            return val.Cities[:limit],nil // slices all the cities from 0 to limit
 
-        }
-    } 
+    if len(data.Data) == 0 {
+        return nil, fmt.Errorf("no cities found")
+    }
+    cities := data.Data
+
+    if limit > 0 && limit < len(cities) {
+        cities = cities[:limit]
+    }
     
-    return nil, fmt.Errorf("no cities found for country: %s", countryName)
+    return cities, nil
 }
 
 
